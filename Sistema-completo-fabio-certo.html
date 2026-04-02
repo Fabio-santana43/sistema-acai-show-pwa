@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema de Comanda - Açaí Show</title>
+  <link rel="icon" href="./logo-acai.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6a1b9a">
+  <!-- Mesmo que o meta theme-color não seja usado pelo Firefox Desktop, mantenha-o para navegadores que o suportam (Chrome/Edge/Android).
+    Usar também propriedades no manifest.json (theme_color/background_color) para a instalação PWA — já presentes no projeto. -->
+  <!-- Windows tile color -->
+  <meta name="msapplication-TileColor" content="#6a1b9a">
+  <!-- iOS (Safari) meta hints -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    body {
+      /* Usar textura local para garantir funcionamento offline e evitar requests cross-origin */
+      background-image: url('./wood-pattern.png');
+      background-repeat: repeat;
+      background-color: #fff8f5;
+      font-family: 'Segoe UI', sans-serif;
+      color: #4a148c;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    header h1 {
+      color: #6a1b9a;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    header p.small {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .grid {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .col {
+      flex: 1;
+      min-width: 300px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(100, 0, 150, 0.1);
+    }
+
+    h2, h3 {
+      color: #6a1b9a;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    .btn-primary {
+      background: #fdd835;
+      color: #4a148c;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-secondary {
+      background: #e1bee7;
+      color: #4a148c;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-primary:hover {
+      background: #fff176;
+    }
+
+    .btn-secondary:hover {
+      background: #ce93d8;
+    }
+
+    #bases-list h3 {
+      margin-bottom: 8px;
+      color: #4a148c;
+      font-size: 16px;
+    }
+
+    #bases-list label:hover {
+      background: #e1cfff;
+    }
+
+    #complementos-list,
+    #coberturas-list,
+    #adicionais-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    #complementos-list label,
+    #coberturas-list label,
+    #adicionais-list label {
+      background: #fff3e0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      display: block;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+    }
+
+    #complementos-list label:hover,
+    #coberturas-list label:hover,
+    #adicionais-list label:hover {
+      background: #ffe0b2;
+    }
+/* ⬇️ Ajuste de fonte geral ⬇️ */
+h1, h2, h3, strong {
+  font-weight: 600;
+}
+
+p, li, label, input, button {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🍧 Sistema de Comanda - Açaí Show</h1>
+  <!-- Use imagens locais do projeto para evitar bloqueio (file:// é bloqueado pelo navegador). -->
+  <img src="./logo-acai.png" alt="logo do acai Show" id="acai-logo" style="display:block; margin:10px auto; max-width:200px; border-radius:10px;">
+    <p class="small">Adicione vários pedidos numa única comanda e imprima ao final</p>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <h2>1️⃣ Identificação da comanda</h2>
+      <input id="comanda-id" placeholder="Nome do cliente ou mesa">
+
+      <h2>2️⃣ Escolha o tamanho (base)</h2>
+      <div id="bases-list" style="display: flex; flex-direction: column; gap: 20px;"></div>
+
+      <h2>3️⃣ Complementos 🍪</h2>
+      <div id="complementos-list"></div>
+
+      <h2>4️⃣ Coberturas 🍫</h2>
+      <div id="coberturas-list"></div>
+
+      <h2>5️⃣ Adicionais pagos 💸</h2>
+      <div id="adicionais-list"></div>
+
+  <h2>6️⃣ Bebidas & Refrigerantes 🥤</h2>
+  <div id="produtos-list"></div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+        <button id="add-to-comanda" class="btn-primary">➕ Adicionar à comanda</button>
+        <button id="add-extra" class="btn-secondary">+ R$ 2,00</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <h2>🧾 Resumo da Comanda</h2>
+      <div id="comanda-preview">
+        <p class="small">Nenhum item adicionado ainda.</p>
+      </div>
+      <div style="margin-top:10px">
+        <strong>Total: <span id="comanda-total">R$ 0,00</span></strong>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button id="limpar-comanda" class="btn-secondary">🧹 Limpar Comanda</button>
+        <button id="imprimir-comanda" class="btn-primary">🖨️ Imprimir Comanda</button>
+        <button id="fechar-caixa" class="btn-secondary">🔒 Fechar Caixa</button>
+        <button id="abrir-caixa" class="btn-primary" style="margin-left:10px;">🟢 Abrir Caixa</button>
+      </div>
+      <div id="caixa-status" style="margin-top:8px; font-weight:700; color:#4a148c;"></div>
+    </div>
+  </div>
+
+  <div class="col" style="margin-top:30px;">
+    <h2>📊 Histórico de Vendas</h2>
+    <button id="ver-historico" class="btn-secondary">🔍 Ver Histórico</button>
+    <button id="voltar-comanda" class="btn-secondary" style="display:none;">🔙 Voltar para Comanda</button>
+    <div id="historico-vendas" style="margin-top:15px; display:none;"></div>
+
+<script>
+const menuData = {
+  bases: [
+    { id: 'acai200', name: 'Açaí 200ml', price: 8.00, maxComplementos: 2, maxCoberturas: 1 },
+    { id: 'acai300', name: 'Açaí 300ml', price: 12.00, maxComplementos: 3, maxCoberturas: 1 },
+    { id: 'acai500', name: 'Açaí 500ml', price: 16.00, maxComplementos: 4, maxCoberturas: 2 },
+    { id: 'acai700', name: 'Açaí 700ml', price: 20.00, maxComplementos: 4, maxCoberturas: 2 },
+
+    { id: 'promocao200', name: 'Promoção 200ml', price: 11.00, maxComplementos: 2, maxCoberturas: 1 },
+    { id: 'promocao300', name: 'Promoção 300ml', price: 15.00, maxComplementos: 3, maxCoberturas: 1 },
+    { id: 'promocao500', name: 'Promoção 500ml', price: 19.00, maxComplementos: 4, maxCoberturas: 2 },
+
+    { id: 'casadinho200', name: 'Casadinho 200ml', price: 9.00, maxComplementos: 2, maxCoberturas: 1 },
+    { id: 'casadinho300', name: 'Casadinho 300ml', price: 13.00, maxComplementos: 3, maxCoberturas: 1 },
+    { id: 'casadinho500', name: 'Casadinho 500ml', price: 17.00, maxComplementos: 4, maxCoberturas: 2 },
+    { id: 'casadinho700', name: 'Casadinho 700ml', price: 21.00, maxComplementos: 4, maxCoberturas: 2 },
+
+    { id: 'cupuacu200', name: 'Cupuaçu 200ml', price: 9.00, maxComplementos: 2, maxCoberturas: 1 },
+    { id: 'cupuacu300', name: 'Cupuaçu 300ml', price: 13.00, maxComplementos: 3, maxCoberturas: 1 },
+    { id: 'cupuacu500', name: 'Cupuaçu 500ml', price: 17.00, maxComplementos: 4, maxCoberturas: 2 },
+    { id: 'cupuacu700', name: 'Cupuaçu 700ml', price: 21.00, maxComplementos: 4, maxCoberturas: 2 }
+  ],
+
+  complementos: [
+    'Amendoim',
+    'Leite em pó',
+    'Farinha de paçoca',
+    'Granola',
+    'Choco Boll',
+    'ChocoMix',
+    'Farinha Láctea',
+    'Flocos de arroz',
+    'Banana'
+  ],
+
+  coberturas: [
+    'Leite condensado',
+    'Morango',
+    'Cereja',
+    'Chocolate',
+    'Caramelo'
+  ],
+
+  adicionais: [
+    { name: 'Chantilly', price: 2.00 },
+    { name: 'Paçoca', price: 2.00 },
+    { name: 'M&M', price: 2.00 },
+    { name: 'Nutella', price: 4.00 }
+  ]
+  ,
+  produtos: [
+    { name: 'Água', price: 3.00 },
+    { name: 'Refrigerante', price: null }
+  ]
+};
+
+let comanda = [];
+let historicoVendas = [];
+let caixaStatus = 'open'; // 'open' | 'closed'
+
+const STORAGE_KEYS = {
+  comanda: 'acai_comanda',
+  historico: 'acai_historico',
+  caixa: 'acai_caixa_status'
+};
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.comanda, JSON.stringify(comanda));
+    localStorage.setItem(STORAGE_KEYS.historico, JSON.stringify(historicoVendas));
+    localStorage.setItem(STORAGE_KEYS.caixa, caixaStatus);
+  } catch (err) {
+    console.error('Erro salvando estado no localStorage', err);
+  }
+}
+
+function loadState() {
+  try {
+    const rawComanda = localStorage.getItem(STORAGE_KEYS.comanda);
+    const rawHistorico = localStorage.getItem(STORAGE_KEYS.historico);
+    const rawCaixa = localStorage.getItem(STORAGE_KEYS.caixa);
+    if (rawComanda) {
+      comanda = JSON.parse(rawComanda) || [];
+    }
+    if (rawHistorico) {
+      historicoVendas = JSON.parse(rawHistorico) || [];
+    }
+    if (rawCaixa) caixaStatus = rawCaixa;
+  } catch (err) {
+    console.error('Erro carregando estado do localStorage', err);
+  }
+  updateCaixaStatusUI();
+  updateComanda();
+}
+
+function updateCaixaStatusUI() {
+  const el = document.getElementById('caixa-status');
+  if (!el) return;
+  if (caixaStatus === 'open') {
+    el.textContent = 'Caixa: Aberto';
+    el.style.color = '#2e7d32';
+  } else {
+    el.textContent = 'Caixa: Fechado - abra o caixa para registrar vendas';
+    el.style.color = '#c62828';
+  }
+}
+
+function moneyBR(value) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function renderMenu() {
+  const basesList = document.getElementById('bases-list');
+  basesList.innerHTML = '';
+
+  const categorias = {
+    '🍇 Açaí Tradicional': menuData.bases.filter(b => b.id.startsWith('acai')),
+    '💛 Promoção': menuData.bases.filter(b => b.id.startsWith('promocao')),
+    '🖤 Casadinho': menuData.bases.filter(b => b.id.startsWith('casadinho')),
+    '🍌 Cupuaçu': menuData.bases.filter(b => b.id.startsWith('cupuacu'))
+  };
+
+  for (const [titulo, copos] of Object.entries(categorias)) {
+    const grupo = document.createElement('div');
+    grupo.innerHTML = `<h3>${titulo}</h3>`;
+    grupo.style.marginBottom = '10px';
+
+    const lista = document.createElement('div');
+    lista.style.display = 'grid';
+    lista.style.gridTemplateColumns = '1fr 1fr';
+    lista.style.gap = '8px';
+
+    copos.forEach(base => {
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="radio" name="base" value="${base.id}"> ${base.name} (${moneyBR(base.price)})`;
+      lista.appendChild(label);
+    });
+
+    grupo.appendChild(lista);
+    basesList.appendChild(grupo);
+  }
+
+  const complementosList = document.getElementById('complementos-list');
+  complementosList.innerHTML = menuData.complementos.map(item => {
+    return `<label><input type="checkbox" value="${item}"> ${item}</label>`;
+  }).join('');
+
+  const coberturasList = document.getElementById('coberturas-list');
+  coberturasList.innerHTML = menuData.coberturas.map(item => {
+    return `<label><input type="checkbox" value="${item}"> ${item}</label>`;
+  }).join('');
+
+  const adicionaisList = document.getElementById('adicionais-list');
+  // Renderiza cada adicional com controles de quantidade (+ / -)
+  adicionaisList.innerHTML = menuData.adicionais.map(add => {
+    return `
+      <label style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <span style="flex:1">${add.name} (${moneyBR(add.price)})</span>
+        <div style="display:inline-flex; align-items:center; gap:6px;">
+          <button type="button" class="qty-btn decr" data-name="${add.name}" style="padding:4px 8px;">−</button>
+          <input type="number" min="0" value="0" class="adicional-qty" data-name="${add.name}" style="width:48px; text-align:center; padding:4px; border-radius:4px; border:1px solid #ccc;">
+          <button type="button" class="qty-btn incr" data-name="${add.name}" style="padding:4px 8px;">+</button>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  // Renderiza produtos (bebidas, etc.) com controles de quantidade
+  const produtosList = document.getElementById('produtos-list');
+  if (produtosList) {
+    produtosList.innerHTML = menuData.produtos.map(p => {
+      const priceHtml = p.price !== null ? `${moneyBR(p.price)}` : `<input type="number" min="0" step="0.01" placeholder="R$" class="produto-price" data-name="${p.name}" style="width:80px; padding:4px; border-radius:4px; border:1px solid #ccc;">`;
+      return `
+        <label style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span style="flex:1">${p.name} <small style="color:#666;">${priceHtml}</small></span>
+          <div style="display:inline-flex; align-items:center; gap:6px;">
+            <button type="button" class="qty-btn decr" data-name="${p.name}" style="padding:4px 8px;">−</button>
+            <input type="number" min="0" value="0" class="produto-qty" data-name="${p.name}" style="width:48px; text-align:center; padding:4px; border-radius:4px; border:1px solid #ccc;">
+            <button type="button" class="qty-btn incr" data-name="${p.name}" style="padding:4px 8px;">+</button>
+          </div>
+        </label>
+      `;
+    }).join('');
+  }
+}
+
+function updateComanda() {
+  const preview = document.getElementById('comanda-preview');
+  const totalSpan = document.getElementById('comanda-total');
+
+  if (comanda.length === 0) {
+    preview.innerHTML = '<p class="small">Nenhum item adicionado ainda.</p>';
+    totalSpan.textContent = 'R$ 0,00';
+    return;
+  }
+
+  let html = '<ul>';
+  let totalGeral = 0;
+
+  comanda.forEach((item, index) => {
+    const adicionais = item.adicionais.length ? item.adicionais.map(a => `${a.qty}x ${a.name}`).join(', ') : 'Nenhum';
+    const extrasTexto = item.extras > 0 ? ` (+${moneyBR(item.extras)} de complementos extras)` : '';
+    const quantidadeTexto = item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : '';
+    html += `<li>
+      <strong>Pedido ${index + 1} — ${item.base.name}${quantidadeTexto}</strong><br>
+      Complementos: ${item.complementos.join(', ') || 'Nenhum'}<br>
+      Coberturas: ${item.coberturas.join(', ') || 'Nenhuma'}<br>
+      Adicionais: ${adicionais}<br>
+      <em>Total do item: ${moneyBR(item.total)}${extrasTexto}</em>
+    </li>`;
+    totalGeral += item.total;
+  });
+
+  html += '</ul>';
+  preview.innerHTML = html;
+  totalSpan.textContent = moneyBR(totalGeral);
+}
+
+document.getElementById('add-to-comanda').addEventListener('click', () => {
+  if (caixaStatus === 'closed') return alert('Caixa fechado. Abra o caixa para registrar vendas.');
+
+  const baseId = document.querySelector('input[name="base"]:checked');
+  const complementosSelecionados = Array.from(document.querySelectorAll('#complementos-list input:checked')).map(i => i.value);
+  const coberturasSelecionadas = Array.from(document.querySelectorAll('#coberturas-list input:checked')).map(i => i.value);
+  // Ler quantidades dos adicionais (cada adicional pode ter quantidade 0..N)
+  const adicionaisQtyInputs = Array.from(document.querySelectorAll('#adicionais-list .adicional-qty'));
+  const adicionais = adicionaisQtyInputs.map(inp => {
+    const qty = parseInt(inp.value, 10) || 0;
+    const name = inp.dataset.name;
+    const def = menuData.adicionais.find(a => a.name === name);
+    return { name, price: def.price, qty, total: qty * def.price };
+  }).filter(a => a.qty > 0);
+  const adicionaisTotal = adicionais.reduce((acc, a) => acc + a.total, 0);
+
+  // Ler quantidades dos produtos avulsos (ex: Água)
+  const produtosQtyInputs = Array.from(document.querySelectorAll('#produtos-list .produto-qty'));
+  const produtos = produtosQtyInputs.map(inp => {
+    const qty = parseInt(inp.value, 10) || 0;
+    const name = inp.dataset.name;
+    const def = menuData.produtos.find(p => p.name === name);
+    // se o produto não tem preço fixo (price === null), ler o preço do input correspondente
+    let unitPrice = def.price;
+    if (unitPrice === null) {
+      const priceInput = document.querySelector(`#produtos-list .produto-price[data-name="${name}"]`);
+      unitPrice = priceInput ? parseFloat(priceInput.value.replace(',', '.')) || 0 : 0;
+    }
+    return { name, price: unitPrice, qty, total: qty * unitPrice };
+  }).filter(p => p.qty > 0);
+
+  // Se não houver base selecionada nem produtos com quantidade, não adiciona
+  if (!baseId && produtos.length === 0) return alert('Selecione um tamanho/base ou adicione um produto.');
+
+  // Se houver base selecionada, processa o item de base normalmente
+  let base = null;
+  let isPromocao = false;
+  if (baseId) {
+    base = menuData.bases.find(b => b.id === baseId.value);
+    isPromocao = base.id.startsWith('promocao');
+  }
+
+  let complementos = [...complementosSelecionados];
+  let coberturas = [...coberturasSelecionadas];
+  let extras = 0;
+  let complementosExtras = [];
+
+  if (isPromocao) {
+    // Limita complementos a 2, cobra R$ 2,00 por cada extra
+    if (complementos.length > 2) {
+      complementosExtras = complementos.slice(2);
+      extras = complementosExtras.length * 2.00;
+      complementos = complementos.slice(0, 2);
+    }
+
+    // Limita coberturas a 1, bloqueia se tiver mais
+    if (coberturas.length > 1) {
+      return alert('Copos da promoção permitem no máximo 1 cobertura.');
+    }
+  } else {
+    // Fora da promoção, aplica limites normais
+    const extrasComplementos = Math.max(0, complementos.length - (base ? base.maxComplementos : 0));
+    const extrasCoberturas = Math.max(0, coberturas.length - (base ? base.maxCoberturas : 0));
+    extras = extrasComplementos * 2.00; // se quiser cobrar por coberturas extras também, some extrasCoberturas * 2.00
+  }
+
+  // Se houver base, cria o item de base
+  if (base) {
+    const total = base.price + adicionaisTotal + extras;
+    comanda.push({
+      base,
+      complementos,
+      coberturas,
+      adicionais,
+      extras,
+      complementosExtras,
+      total
+    });
+  }
+
+  // Produtos avulsos viram itens separados na comanda
+  produtos.forEach(p => {
+    const prodItem = {
+      base: { name: p.name, price: p.price },
+      complementos: [],
+      coberturas: [],
+      adicionais: [],
+      extras: 0,
+      complementosExtras: [],
+      total: p.total,
+      quantity: p.qty
+    };
+    comanda.push(prodItem);
+  });
+
+  // salvar rascunho da comanda
+  saveState();
+
+  updateComanda();
+
+  if (document.querySelector('input[name="base"]:checked')) document.querySelector('input[name="base"]:checked').checked = false;
+  // reset selections and adicionais quantities
+  document.querySelectorAll('#complementos-list input:checked, #coberturas-list input:checked')
+    .forEach(i => i.checked = false);
+  document.querySelectorAll('#adicionais-list .adicional-qty')
+    .forEach(i => i.value = '0');
+  document.querySelectorAll('#produtos-list .produto-qty').forEach(i => i.value = '0');
+});
+
+// Botão rápido para adicionar um extra de R$2,00 como item separado na comanda
+document.getElementById('add-extra').addEventListener('click', () => {
+  if (caixaStatus === 'closed') return alert('Caixa fechado. Abra o caixa para registrar vendas.');
+
+  // Agrupa extras: procura item existente do mesmo tipo e incrementa quantidade
+  const nomeExtra = 'Adicional +R$2,00';
+  const existente = comanda.find(it => it.base && it.base.name === nomeExtra);
+  if (existente) {
+    existente.quantity = (existente.quantity || 1) + 1;
+    existente.total = Number((Number(existente.total) + 2.00).toFixed(2));
+  } else {
+    const extraItem = {
+      base: { name: nomeExtra, price: 2.00 },
+      complementos: [],
+      coberturas: [],
+      adicionais: [],
+      extras: 0,
+      complementosExtras: [],
+      total: 2.00,
+      quantity: 1
+    };
+    comanda.push(extraItem);
+  }
+  updateComanda();
+  saveState();
+});
+
+
+document.getElementById('limpar-comanda').addEventListener('click', () => {
+  if (confirm('Tem certeza que deseja limpar toda a comanda?')) {
+    comanda = [];
+    document.getElementById('comanda-id').value = '';
+    updateComanda();
+    saveState();
+  }
+});
+
+document.getElementById('imprimir-comanda').addEventListener('click', () => {
+  if (comanda.length === 0) return alert('Nenhum pedido para imprimir.');
+
+  const comandaId = document.getElementById('comanda-id').value.trim();
+  const conteudo = document.getElementById('comanda-preview').innerHTML;
+  // Salvar total como NUMBER no histórico
+  const totalNumeric = comanda.reduce((acc, it) => acc + (typeof it.total === 'number' ? it.total : parseFloat(it.total) || 0), 0);
+
+  historicoVendas.push({
+    id: comandaId || `Venda ${historicoVendas.length + 1}`,
+    pedidos: [...comanda],
+    total: totalNumeric
+  });
+
+  // salvar histórico e limpar rascunho
+  saveState();
+
+  const janela = window.open('', '', 'width=800,height=600');
+  janela.document.write(`
+    <html>
+      <head><title>Comanda Açaí Show</title></head>
+      <body>
+        <h2>Comanda Açaí Show</h2>
+        ${comandaId ? `<p><strong>Cliente/Mesa:</strong> ${comandaId}</p>` : ''}
+        ${conteudo}
+        <p><strong>Total:</strong> ${moneyBR(totalNumeric)}</p>
+        <p><em>Obrigado por escolher o Açaí Show!</em></p>
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.print();
+
+  comanda = [];
+  document.getElementById('comanda-id').value = '';
+  // reset adicionais quantities after imprimir
+  document.querySelectorAll('#adicionais-list .adicional-qty').forEach(i => i.value = '0');
+  updateComanda();
+  saveState();
+});
+
+document.getElementById('fechar-caixa').addEventListener('click', () => {
+  if (historicoVendas.length === 0) {
+    alert('Nenhuma venda registrada hoje.');
+    return;
+  }
+
+  // Somar totais numéricos diretamente
+  const totalDia = historicoVendas.reduce((acc, venda) => acc + (Number(venda.total) || 0), 0);
+
+  const janela = window.open('', '', 'width=800,height=600');
+  janela.document.write(`
+    <html>
+      <head><title>Fechamento de Caixa</title></head>
+      <body>
+        <h2>Fechamento de Caixa - Açaí Show</h2>
+        <p><strong>Total de vendas do dia:</strong> ${moneyBR(totalDia)}</p>
+        <p><em>Caixa encerrado com sucesso!</em></p>
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.print();
+
+  // Zera histórico e comanda apenas após fechamento
+  historicoVendas = [];
+  comanda = [];
+  caixaStatus = 'closed';
+  document.getElementById('comanda-id').value = '';
+  updateComanda();
+  updateCaixaStatusUI();
+  saveState();
+});
+
+document.getElementById('abrir-caixa').addEventListener('click', () => {
+  // Abrir caixa: marca caixa como aberto e limpa rascunho/histórico localmente
+  caixaStatus = 'open';
+  historicoVendas = [];
+  comanda = [];
+  document.getElementById('comanda-id').value = '';
+  updateComanda();
+  updateCaixaStatusUI();
+  saveState();
+  alert('Novo dia iniciado. Caixa aberto com sucesso!');
+});
+
+document.getElementById('ver-historico').addEventListener('click', () => {
+  const container = document.getElementById('historico-vendas');
+  document.getElementById('voltar-comanda').style.display = 'inline-block';
+  document.querySelector('.grid').style.display = 'none';
+  container.style.display = 'block';
+
+  if (historicoVendas.length === 0) {
+    container.innerHTML = '<p class="small">Nenhuma venda registrada ainda.</p>';
+    return;
+  }
+  // Calcula total de todas as vendas do histórico
+  const totalHistorico = historicoVendas.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+
+  const vendasHtml = historicoVendas.map((venda, index) => {
+    const pedidos = venda.pedidos.map((item, i) => {
+      const adicionais = item.adicionais.length ? item.adicionais.map(a => `${a.qty}x ${a.name}`).join(', ') : 'Nenhum';
+      const extrasTexto = item.extras > 0 ? ` (+${moneyBR(item.extras)} de complementos extras)` : '';
+      const quantidadeTexto = item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : '';
+      return `<li>
+        <strong>Pedido ${i + 1} — ${item.base.name}${quantidadeTexto}</strong><br>
+        Complementos: ${item.complementos.join(', ') || 'Nenhum'}<br>
+        Coberturas: ${item.coberturas.join(', ') || 'Nenhuma'}<br>
+        Adicionais: ${adicionais}<br>
+        <em>Total do item: ${moneyBR(item.total)}${extrasTexto}</em>
+      </li>`;
+    }).join('');
+
+    return `<div style="border-top:1px solid #ccc; padding-top:10px; margin-top:10px;">
+      <strong>Venda ${index + 1} — ${venda.id}</strong><br>
+      Total: ${moneyBR(venda.total)}
+      <ul>${pedidos}</ul>
+    </div>`;
+  }).join('');
+
+  // Exibe o total geral no topo do histórico
+  container.innerHTML = `<p><strong>Total geral do histórico: ${moneyBR(totalHistorico)}</strong></p>` + vendasHtml;
+  // mostrar status do caixa também no histórico
+  const statusEl = document.createElement('p');
+  statusEl.style.fontWeight = '700';
+  statusEl.textContent = caixaStatus === 'open' ? 'Caixa: Aberto' : 'Caixa: Fechado';
+  container.insertBefore(statusEl, container.firstChild);
+});
+
+document.getElementById('voltar-comanda').addEventListener('click', () => {
+  document.getElementById('voltar-comanda').style.display = 'none';
+  document.querySelector('.grid').style.display = 'flex';
+  document.getElementById('historico-vendas').style.display = 'none';
+});
+
+renderMenu();
+// Carrega estado salvo (comanda, histórico, caixa) e atualiza UI
+loadState();
+
+// Registrar service worker para PWA (funciona em servidor/localhost)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => console.log('Service Worker registrado:', reg))
+    .catch(err => console.warn('Service Worker falhou:', err));
+}
+
+// Eventos para controlar os botões + / - dos adicionais (delegação)
+document.getElementById('adicionais-list').addEventListener('click', (e) => {
+  if (!e.target.matches('.qty-btn')) return;
+  const name = e.target.dataset.name;
+  const input = document.querySelector(`#adicionais-list .adicional-qty[data-name="${name}"]`);
+  if (!input) return;
+  let val = parseInt(input.value, 10) || 0;
+  if (e.target.classList.contains('incr')) val++;
+  else val = Math.max(0, val - 1);
+  input.value = String(val);
+});
+// Eventos para controlar os botões + / - dos produtos (delegação)
+document.getElementById('produtos-list').addEventListener('click', (e) => {
+  if (!e.target.matches('.qty-btn')) return;
+  const name = e.target.dataset.name;
+  const input = document.querySelector(`#produtos-list .produto-qty[data-name="${name}"]`);
+  if (!input) return;
+  let val = parseInt(input.value, 10) || 0;
+  if (e.target.classList.contains('incr')) val++;
+  else val = Math.max(0, val - 1);
+  input.value = String(val);
+});
+</script> 
+</body>
+</html>
+
+
+
