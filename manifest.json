@@ -1,7 +1,7 @@
 {
   "name": "Açaí Show - Comandas",
   "short_name": "AçaíShow",
-  "start_url": "./Sistema-completo-fabio-certo.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fff8f5",
   "theme_color": "#6a1b9a",
