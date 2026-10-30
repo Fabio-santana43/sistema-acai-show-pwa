@@ -1,3 +1,7 @@
+# 🍧 Açaí Show - Sistema de Comandas PWA
+Sistema de gestão de comandas para loja de Açaí, desenvolvido com HTML/JS e funcionalidade PWA (Offline). 
+Projeto real usado na minha loja em Taguatinga, DF - Taguatinga.
+
 <img width="1904" height="1030" alt="Captura de tela 2026-10-30 000713" src="https://github.com/user-attachments/assets/337b3425-d207-4cdb-add3-adc495919c4d" /><img width="1907" height="1031" alt="Captura de tela 2026-10-30 000929" src="https://github.com/user-attachments/assets/cea8f14b-b985-4895-96c6-2dfeb114cb34" />
 <img width="1906" height="1029" alt="Captura de tela 2026-10-30 000858" src="https://github.com/user-attachments/assets/054b5a24-ecc7-466b-8f87-421fc58a31f9" />
 <img width="1904" height="1030" alt="Captura de tela 2026-10-30 000813" src="https://github.com/user-attachments/assets/48c8a347-bcf0-457d-9a9d-2ecf7913f76c" />
